@@ -344,3 +344,5 @@ function prepareData(data, { sprintId } = obj) {
     },
   ]
 }
+
+module.exports = { prepareData }
