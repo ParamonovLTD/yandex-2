@@ -1,3 +1,20 @@
+function getEnding(value, template) {
+  //template example ['голос', "голоса", "голосов"]
+  value = Math.abs(value)
+  let lastTwoSyms = value % 100
+  let lastSym = value % 10
+
+  if (lastTwoSyms >= 10 && lastTwoSyms <= 20) {
+    return `${value} ${template[2]}`
+  } else if ((lastSym >= 5 && lastSym <= 9) || lastSym === 0) {
+    return `${value} ${template[2]}`
+  } else if (lastSym >= 2 && lastSym <= 4) {
+    return `${value} ${template[1]}`
+  }
+
+  return `${value} ${template[0]}`
+}
+
 function getTopUsers(users, commits) {
   let usersCommits = []
   for (let i = 0; i < users.length + 1; i++) {
@@ -20,7 +37,7 @@ function getTopUsers(users, commits) {
       id: user.id,
       name: user.name,
       avatar: user.avatar,
-      valueText: usersCommits[user.id],
+      valueText: `${usersCommits[user.id]}`,
     })
 
     usersCommits[user.id] = null
@@ -35,12 +52,14 @@ function getTopCommentsUsers(users, comments) {
     usersComments[i] = 0
   }
 
-  comments.forEach(comment => usersComments[comment.author]++)
+  comments.forEach(
+    comment => (usersComments[comment.author] += comment.likes.length)
+  )
 
   let sortedUsersComments = [...usersComments].sort((a, b) => b - a)
   let topCommentsUsers = []
 
-  for (let i = 0; topCommentsUsers.length < 5; i++) {
+  for (let i = 0; topCommentsUsers.length < users.length; i++) {
     let user = users.find(
       user => user.id === usersComments.indexOf(sortedUsersComments[i])
     )
@@ -49,7 +68,11 @@ function getTopCommentsUsers(users, comments) {
       id: user.id,
       name: user.name,
       avatar: user.avatar,
-      valueText: `${usersComments[user.id]} голоса`,
+      valueText: getEnding(usersComments[user.id], [
+        'голос',
+        'голоса',
+        'голосов',
+      ]),
     })
 
     usersComments[user.id] = null
@@ -72,46 +95,49 @@ function getSprintStatistic(sprintId, commits, sprints) {
   return counter
 }
 
-function getChartStatistic(sprintId, commits, sprints) {
-  return [
+function getChartStatistic(
+  sprint,
+  commits,
+  sprints,
+  sprintsBefore,
+  sprintsAfter
+) {
+  let result = [
     {
-      title: `${sprintId - 5}`,
-      value: getSprintStatistic(sprintId - 5, commits, sprints),
-    },
-    {
-      title: `${sprintId - 4}`,
-      value: getSprintStatistic(sprintId - 4, commits, sprints),
-    },
-    {
-      title: `${sprintId - 3}`,
-      value: getSprintStatistic(sprintId - 3, commits, sprints),
-    },
-    {
-      title: `${sprintId - 2}`,
-      value: getSprintStatistic(sprintId - 2, commits, sprints),
-    },
-    {
-      title: `${sprintId - 1}`,
-      value: getSprintStatistic(sprintId - 1, commits, sprints),
-    },
-    {
-      title: `${sprintId}`,
-      value: getSprintStatistic(sprintId, commits, sprints),
+      title: `${sprint.id}`,
+      hint: sprint.name,
+      value: getSprintStatistic(sprint.id, commits, sprints),
       active: true,
     },
-    {
-      title: `${sprintId + 1}`,
-      value: getSprintStatistic(sprintId + 1, commits, sprints),
-    },
-    {
-      title: `${sprintId + 2}`,
-      value: getSprintStatistic(sprintId + 2, commits, sprints),
-    },
-    {
-      title: `${sprintId + 3}`,
-      value: getSprintStatistic(sprintId + 3, commits, sprints),
-    },
   ]
+
+  for (let i = 1; i <= sprintsBefore; i++) {
+    let currentSprint = sprints.find(
+      currSprint => currSprint.id === sprint.id - i
+    )
+
+    result.unshift({
+      title: `${sprint.id - i}`,
+      hint: currentSprint.name,
+      value: getSprintStatistic(sprint.id - i, commits, sprints),
+    })
+  }
+
+  console.log(getSprintStatistic(958, commits, sprints))
+
+  for (let i = 1; i <= sprintsAfter; i++) {
+    let currentSprint = sprints.find(
+      currSprint => currSprint.id === sprint.id + i
+    )
+
+    result.push({
+      title: `${sprint.id + i}`,
+      hint: currentSprint.name,
+      value: getSprintStatistic(sprint.id + i, commits, sprints),
+    })
+  }
+
+  return result
 }
 
 function getCommitSizes(sprint, commits, allSummaries) {
@@ -175,37 +201,38 @@ function getDiagramStatistic(sprint, previousSprint, commits, allSummaries) {
       title: '> 1001 строки',
       valueText: `${currentHuge} коммитов`,
       differenceText: `${
-        hugeDifference < 0 ? `${hugeDifference}` : `+${hugeDifference}`
-      } коммитов`,
+        hugeDifference < 0 ? '-' : '+'
+      }${getEnding(hugeDifference, ['коммит', 'коммита', 'коммитов'])}`,
     },
     {
       title: '501 — 1000 строк',
       valueText: `${currentBig} коммитов`,
       differenceText: `${
-        bigDifference < 0 ? `${bigDifference}` : `+${bigDifference}`
-      } коммитов`,
+        bigDifference < 0 ? '-' : '+'
+      }${getEnding(bigDifference, ['коммит', 'коммита', 'коммитов'])}`,
     },
     {
       title: '101 — 500 строк',
       valueText: `${currentMedium} коммитов`,
       differenceText: `${
-        mediumDifference < 0 ? `${mediumDifference}` : `+${mediumDifference}`
-      } коммитов`,
+        mediumDifference < 0 ? '-' : '+'
+      }${getEnding(mediumDifference, ['коммит', 'коммита', 'коммитов'])}`,
     },
     {
       title: '1 — 100 строк',
       valueText: `${currentSmall} коммитов`,
       differenceText: `${
-        smallDifference < 0 ? `${smallDifference}` : `+${smallDifference}`
-      } коммитов`,
+        smallDifference < 0 ? '-' : '+'
+      }${getEnding(smallDifference, ['коммит', 'коммита', 'коммитов'])}`,
     },
   ]
 }
 
 function getActivityStatistic(commits, usersLength) {
+  const hoursInDay = 24
   const monArray = []
 
-  for (let i = 0; i < usersLength + 1; i++) {
+  for (let i = 0; i < hoursInDay; i++) {
     monArray[i] = 0
   }
 
@@ -217,45 +244,47 @@ function getActivityStatistic(commits, usersLength) {
   const sunArray = [...monArray]
 
   commits.forEach(commit => {
+    let commitHour = new Date(commit.timestamp).getHours()
+
     switch (new Date(commit.timestamp).getDay()) {
       case 0:
-        sunArray[commit.author]++
+        sunArray[commitHour]++
         break
       case 1:
-        monArray[commit.author]++
+        monArray[commitHour]++
         break
       case 2:
-        tueArray[commit.author]++
+        tueArray[commitHour]++
         break
       case 3:
-        wedArray[commit.author]++
+        wedArray[commitHour]++
         break
       case 4:
-        thuArray[commit.author]++
+        thuArray[commitHour]++
         break
       case 5:
-        friArray[commit.author]++
+        friArray[commitHour]++
         break
       case 6:
-        satArray[commit.author]++
+        satArray[commitHour]++
         break
     }
   })
 
   return {
-    mon: monArray.slice(1),
-    tue: tueArray.slice(1),
-    wed: wedArray.slice(1),
-    thu: thuArray.slice(1),
-    fri: friArray.slice(1),
-    sat: satArray.slice(1),
-    sun: sunArray.slice(1),
+    mon: monArray,
+    tue: tueArray,
+    wed: wedArray,
+    thu: thuArray,
+    fri: friArray,
+    sat: satArray,
+    sun: sunArray,
   }
 }
 
 function prepareData(data, { sprintId } = obj) {
   const sprint = data.find(creature => creature.id === sprintId)
-  const previousSprint = data.find(creature => creature.id - 1 === sprintId)
+  const previousSprint = data.find(creature => creature.id === sprintId - 1)
 
   const sprints = data.filter(creature => creature.type === 'Sprint')
   const users = data.filter(creature => creature.type === 'User')
@@ -274,7 +303,7 @@ function prepareData(data, { sprintId } = obj) {
 
   const topUsers = getTopUsers(users, timedCommits)
   const topCommentsUsers = getTopCommentsUsers(users, timedComments)
-  const chartStatistic = getChartStatistic(sprint.id, commits, sprints)
+  const chartStatistic = getChartStatistic(sprint, commits, sprints, 19, 19)
   const diagramStatistic = getDiagramStatistic(
     sprint,
     previousSprint,
@@ -325,7 +354,11 @@ function prepareData(data, { sprintId } = obj) {
       data: {
         title: 'Размер коммитов',
         subtitle: sprint.name,
-        totalText: `${totalDiagramText} коммита`,
+        totalText: getEnding(totalDiagramText, [
+          'коммит',
+          'коммита',
+          'коммитов',
+        ]),
         differenceText: `${
           differenceDiagramText < 0
             ? `${differenceDiagramText}`
