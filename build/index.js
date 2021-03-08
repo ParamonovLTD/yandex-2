@@ -123,8 +123,6 @@ function getChartStatistic(
     })
   }
 
-  console.log(getSprintStatistic(958, commits, sprints))
-
   for (let i = 1; i <= sprintsAfter; i++) {
     let currentSprint = sprints.find(
       currSprint => currSprint.id === sprint.id + i
@@ -228,7 +226,7 @@ function getDiagramStatistic(sprint, previousSprint, commits, allSummaries) {
   ]
 }
 
-function getActivityStatistic(commits, usersLength) {
+function getActivityStatistic(commits) {
   const hoursInDay = 24
   const monArray = []
 
@@ -310,7 +308,7 @@ function prepareData(data, { sprintId } = obj) {
     commits,
     summaries
   )
-  const activityStatistic = getActivityStatistic(timedCommits, users.length)
+  const activityStatistic = getActivityStatistic(timedCommits)
 
   const totalDiagramText = diagramStatistic.reduce(
     (value, item) => value + parseInt(item.valueText.split(' ')[0]),
@@ -378,4 +376,4 @@ function prepareData(data, { sprintId } = obj) {
   ]
 }
 
-module.exports = { prepareData }
+export = { prepareData }
