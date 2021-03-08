@@ -11,7 +11,7 @@ function getTopUsers(users, commits) {
   let sortedUsersCommits = [...usersCommits].sort((a, b) => b - a)
   let topUsers = []
 
-  for (let i = 0; topUsers.length < 5; i++) {
+  for (let i = 0; topUsers.length < users.length; i++) {
     let user = users.find(
       user => user.id === usersCommits.indexOf(sortedUsersCommits[i])
     )
